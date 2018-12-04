@@ -2,14 +2,16 @@ from loadFile import loadfile
 import re
 from collections import Counter
 
-class Guard():
-  ids = {}
-  def __new__(cls, id):
+class GuardMeta(type):
+  def __call__(cls, id, *args, **kwarg):
     if id in cls.ids:
       return cls.ids[id]
-    g = super().__new__(cls)
+    g = super().__call__(id, *args, **kwarg)
     cls.ids[id] = g
     return g
+
+class Guard(metaclass=GuardMeta):
+  ids = {}
   def __init__(self, id):
     self.id = id
     self.days = {}
@@ -31,6 +33,10 @@ class Guard():
     for s in self.days.values():
       total += len(s)
     return total
+  def mostCommonMin(self):
+    if len(self.allMins) < 1:
+      return 0,0
+    return self.allMins.most_common(1)[0]
 
 
 
@@ -52,5 +58,9 @@ if __name__ == "__main__":
         guard.sleep(minute)
       elif wake:
         guard.wake(minute)
-  for g in sorted(Guard.ids.values(), key=lambda g: g.sleepAmount()):
-    print("Guard {} slept for {} min(s) total. Most slept minute: {} of {}".format(g.id, g.sleepAmount(), g.allMins.most_common(1), len(g.allMins.most_common())))
+  g = sorted(Guard.ids.values(), key=lambda g: g.sleepAmount(), reverse=True)[0]
+  print("Guard {} slept for {} min(s) total. Most slept minute: {}".format(g.id, g.sleepAmount(), g.mostCommonMin()[0]))
+  print(int(g.id) * g.mostCommonMin()[0])
+  g = sorted(Guard.ids.values(), key=lambda g: g.mostCommonMin()[1], reverse=True)[0]
+  print("Guard {} slept for {} min(s) total. Most slept minute: {}".format(g.id, g.sleepAmount(), g.mostCommonMin()))
+  print(int(g.id) * g.mostCommonMin()[0])
