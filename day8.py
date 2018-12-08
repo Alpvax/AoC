@@ -8,7 +8,7 @@ class Node():
     self. numMeta = data.popleft()
     self.children = []
     for i in range(self.numChild):
-      self.children.append( Node(data))
+      self.children.append(Node(data))
     self.meta = []
     for i in range(self.numMeta):
       self.meta.append(data.popleft())
