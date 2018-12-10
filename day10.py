@@ -21,8 +21,9 @@ if __name__ == "__main__":
 #    xlim, ylim = [max(vals) - min(vals) for vals in zip(*[p.pos(i) for p in points])]
 #    print(i, xlim, ylim, xlim + ylim)
   sizes = [sum([max(vals) - min(vals) for vals in zip(*[p.pos(i) for p in points])]) for i in range(20000)]
-  print(min(sizes), sizes.index(min(sizes)))
+  minSizeIndex = sizes.index(min(sizes))
+  print(min(sizes), )
 
   with open("day10Out.txt", "w") as f:
     for point in points:
-      print("{point.x},{point.y}", file = f)
+      print("{p[0]},{p[1]}".format(p=point.pos(minSizeIndex)), file = f)
