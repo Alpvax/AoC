@@ -14,7 +14,9 @@ class Track():
     self.cart = cart
   def enter(self, cart):
     if self.cart:
-      raise CartCollision(self.x, self.y, self.cart, cart)
+      c = self.cart
+      self.cart = None # Cart removed from track
+      raise CartCollision(self.x, self.y, c, cart)
     self.cart = cart
     if self.char == "/":
       if cart.facing in [0, 2]: # Vertical
@@ -84,14 +86,14 @@ if __name__ == "__main__":
 
   collisionNum = 0
   while len(carts) > 1:
-    try:
-      for cart in sorted(carts.values()):
-        cart.move(tracks)
-    except CartCollision as e:
-      print(e)
-      for c in e.carts:
-        if c.cartID in carts:
-          del carts[c.cartID]
-      print(sorted(carts.values(), key = lambda c: c.cartID))
-      if collisionNum == 0:
-        print(e)
+    for cart in sorted(carts.values()):
+      if cart in carts.values():
+        try:
+          cart.move(tracks)
+        except CartCollision as e:
+          for c in e.carts:
+            del carts[c.cartID]
+          if collisionNum == 0:
+            collisionNum += 1
+            print("First collision:\n", e)
+  print("Position of final cart: {cart.x},{cart.y}".format(cart = sorted(carts.values(), key = lambda c: c.cartID)[0]))
