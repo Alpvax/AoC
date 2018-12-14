@@ -41,38 +41,31 @@ class PotGeneration():
       sections.update(self.segment(index + i) for i in range(-2, 3))
     return sections
   def __str__(self, padding = 3):
-    return "".join(map(lambda b: "#" if b else ".", [self.state.get(i, False) for i in range(-padding, self.max + 1)]))
-#  def __getitem__(self, indices):
-#    if not isinstance(indices, tuple):
-#      return (self.offset + indices) in self.state
-#      #indices = tuple(indices)
-#    return [self.state[i + self.offset] for i in range(*indices)]
+    return "".join("#" if self.state.get(i, False) else "." for i in range(-padding, self.max + 1))
+  def value(self):
+    return sum(i for i, v in self.state.items() if v)
 
 if __name__ == "__main__":
-  #chars = dict(enumerate(INITIAL_STATE))
-  #chars = dict(enumerate("#..#.#..##......###...###"))
   mappings = {}
   pattern = re.compile(r"([#.]+) => ([#.])")
   for line in loadfile(12):
+  #for line in loadfile("day12SampleData.txt"):
     m = pattern.match(line)
     mappings[m[1]] = m[2]
 
   patterns = [k for k, v in mappings.items() if v  == "#"]
 
-  #gen0 = PotGeneration(INITIAL_STATE)
-  gen0 = PotGeneration("#..#.#..##......###...###")
-  print(" 0: {}".format(str(gen0)))
+  gen0 = PotGeneration(INITIAL_STATE)
+  #gen0 = PotGeneration("#..#.#..##......###...###")
+  #print("00: {}".format(str(gen0)))
   gen = gen0
-  for n in range(20):
-    gen = PotGeneration({seg.index: True for seg in gen.allSegments() if seg.match(patterns)})
-    print("{: 2}: {}".format(n + 1, str(gen)))
-  print(sum(i for i, v in gen.state.items() if v))
-
-
-#  def upGen(chars):
-#    res = {}
-#    for num in chars.keys():
-#      select = "".join(chars.get(i, ".") for i in range(num - 2, num + 2))
-#      res[num] =
-#  for i in range(20):
-#
+  gens = {}
+  for n in range(50000000000):
+    gens[n] = gen = PotGeneration({seg.index: True for seg in gen.allSegments() if seg.match(patterns)})
+    #print("{:02}: {}".format(n + 1, str(gen)))
+    if n == 19:
+      print(gen.value())
+    if gen0.state == gen.state:
+      print(f"Sequence loops after {n} generations.")
+      print(gens[50000000000 % (n + 1)].value())
+      break
