@@ -16,7 +16,7 @@ def loadfile(num):
   else:
     with open(fname, "r") as file:
       for line in file:
-        yield line
+        yield line.rstrip("\n")
 
 def loopData(num, onLoop=lambda n: True):
   loopnum = 0

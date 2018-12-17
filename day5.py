@@ -13,7 +13,7 @@ def reactedLength(data):
   return len(data)
 
 if __name__ == "__main__":
-  data = list(loadfile(5))[0][0:-1] # Strip newline character :@
+  data = list(loadfile(5))[0] # Strip newline character :@
 
   print(reactedLength(data))
 
