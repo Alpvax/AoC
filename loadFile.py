@@ -1,16 +1,16 @@
-def getFname(num):
+def getFname(num, sample=False):
   fname = ""
   try:
     num = int(num)
-    fname = "day" + str(num) + "Data.txt"
+    fname = "day" + str(num) + ("Sample" if sample else "") + "Data.txt"
   except ValueError:
     fname = num
   return fname
 
 data = {}
 
-def loadfile(num):
-  fname = getFname(num)
+def loadfile(num, sample=False):
+  fname = getFname(num, sample)
   if fname in data:
     return iter(data[fname])
   else:
