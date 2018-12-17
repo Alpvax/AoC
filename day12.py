@@ -60,12 +60,24 @@ if __name__ == "__main__":
   #print("00: {}".format(str(gen0)))
   gen = gen0
   gens = {}
+  delta = None
+  deltaCount = 0
   for n in range(50000000000):
     gens[n] = gen = PotGeneration({seg.index: True for seg in gen.allSegments() if seg.match(patterns)})
     #print("{:02}: {}".format(n + 1, str(gen)))
     if n == 19:
       print(gen.value())
-    if gen0.state == gen.state:
-      print(f"Sequence loops after {n} generations.")
-      print(gens[50000000000 % (n + 1)].value())
-      break
+    if delta == None:
+      delta = gen.value()
+      deltaCount = 1
+    else:
+      d = gen.value() - gens[n-1].value()
+      if d == delta:
+        deltaCount += 1
+        if deltaCount >= 10:
+          print(f"Sequence stabilises after after {n - deltaCount} generations, incrementing by {delta} each generation.")
+          print((50000000000 - n - 1) * delta + gen.value())
+          break
+      else:
+        delta = d
+        deltaCount = 1
