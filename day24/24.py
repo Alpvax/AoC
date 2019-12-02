@@ -1,12 +1,24 @@
 class Group:
-  def __init__(self, id, evil, count, hp, atkDmg, atkTyp, initiative, immune=[], weak=[]):
-    self.id = ("Infection " if evil else "Immune ") + str(id)
+  EID = 0
+  GID =  0
+  @staticmethod
+  def makeID(evil, id = None):
+    if id == None:
+      if evil:
+        id = Group.EID
+        Group.EID += 1
+      else:
+        id = Group.GID
+        Group.GID += 1
+    return ("Infection " if evil else "Immune ") + str(id)
+  def __init__(self, evil, count, hp, atkDmg, atkTyp, init, immune=[], weak=[], id = None):
+    self.id = Group.makeID(evil, id)
     self.evil = evil
     self.count = count
     self.hp = hp
     self.atkDmg = atkDmg
     self.atkTyp = atkTyp
-    self.init = initiative
+    self.init = init
     self.immune = immune
     self.weak = weak
     self._target = None
@@ -21,9 +33,6 @@ class Group:
     elif self._target:
       self._target.targetted = False
     self._target = t
-  @property
-  def good(self):
-    return not self.evil
   @property
   def power(self):
     return self.count * self.atkDmg
@@ -57,15 +66,47 @@ class Group:
         "weak to " + ", ".join(self.weak) if self.weak else None
       ] if s) + ")"
     )
-      
+
 IMMUNE_SYS = [
-  Group(1, False, 17, 5390, 4507, "fire", 2, weak=["radiation", "bludgeoning"]),
-  Group(2, False, 989, 1274, 25, "slashing", 3, ["fire"], ["bludgeoning", "slashing"]),
+  Group(False, 17, 5390, 4507, "fire", 2, weak=["radiation", "bludgeoning"]),
+  Group(False, 989, 1274, 25, "slashing", 3, ["fire"], ["bludgeoning", "slashing"]),
 ]
 INFECTION = [
-  Group(1, True, 801, 4706, 116, "bludgeoning", 1, weak=["radiation"]),
-  Group(2, True, 4485, 2961, 12, "slashing", 4, ["radiation"], ["fire", "cold"]),
+  Group(True, 801, 4706, 116, "bludgeoning", 1, weak=["radiation"]),
+  Group(True, 4485, 2961, 12, "slashing", 4, ["radiation"], ["fire", "cold"]),
 ]
+
+def parseInput(lines):
+  import re
+  lists = ([], [])
+  evil = None
+  for line in lines:
+    if len(line):
+      if re.match("immune system", line, re.I):
+        evil = False
+      elif re.match("infection", line, re.I):
+        evil = True
+      else:
+        m = re.match(r"(?P<count>\d+) units each with (?P<hp>\d+) hit points(?: \((?P<resist>.+)\))? with an attack that does (?P<atkDmg>\d+) (?P<atkTyp>\w+) damage at initiative (?P<init>\d+)", line)
+        if m:
+          args = m.groupdict()
+          args["evil"] = evil
+          if args["resist"]:
+            resist = args["resist"]
+            for r in re.finditer(r"(?:immune to (?P<immune>\w+(?:, \w+)*))|(?:weak to (?P<weak>\w+(?:, \w+)*))", resist):
+              immune, weak = [[t for t in (v if v else "").split(",") if t] for v in r.group("immune", "weak")]
+              if immune:
+                args["immune"] = immune
+              if weak:
+                args["weak"] = weak
+          del args["resist"]
+          group = Group(**args)
+          if evil:
+            lists[1].append(group)
+          else:
+            lists[0].append(group)
+  return lists
+
 
 def printGroups():
   print("Immune system:")
@@ -92,13 +133,13 @@ def target_select():
       ) for i, target in enumerate(targets))
       group.target = targets[target[-1]]
       print(group.id, "will attack", group.target.id, "for", target[0], "damage.")
-    
+
 def attack_targets():
   groups = sorted(INFECTION + IMMUNE_SYS, reverse=True, key = lambda g: g.init)
   for group in groups:
     if group.target:
       print(group.id, "attacks", group.target.id, "killing", group.target.damage(group.target.getModifiedDamage(group.power, group.atkTyp)), "units.")
-    
+
 def filterGroups():
   good = []
   evil = []
@@ -111,11 +152,15 @@ def filterGroups():
       g.target = None
       evil.append(g)
   return good, evil
-    
-while len(IMMUNE_SYS) > 0 and len(INFECTION) > 1:
+
+if __name__ == "__main__":
+  with open("input.txt") as f:
+    IMMUNE_SYS, INFECTION = parseInput(f)
+  while len(IMMUNE_SYS) > 0 and len(INFECTION) > 1:
+    printGroups()
+    break#XXX
+    target_select()
+    attack_targets()
+    IMMUNE_SYS, INFECTION = filterGroups()
   printGroups()
-  target_select()
-  attack_targets()
-  IMMUNE_SYS, INFECTION = filterGroups()
-printGroups()
-print("Remaining:", max(sum(g.count for g in IMMUNE_SYS), sum(g.count for g in INFECTION)))
+  print("Remaining:", max(sum(g.count for g in IMMUNE_SYS), sum(g.count for g in INFECTION)))
