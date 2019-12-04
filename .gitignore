@@ -1,6 +1,8 @@
-*/
-*
-!*.py
-!*.txt
+__pycache__/
+.vscode/
+
+**.*
+!**.py
+!**.txt
 !.gitignore
 
