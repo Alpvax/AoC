@@ -1,6 +1,6 @@
 class Group:
-  EID = 0
-  GID =  0
+  EID = 1
+  GID = 1
   @staticmethod
   def makeID(evil, id = None):
     if id == None:
@@ -14,11 +14,11 @@ class Group:
   def __init__(self, evil, count, hp, atkDmg, atkTyp, init, immune=[], weak=[], id = None):
     self.id = Group.makeID(evil, id)
     self.evil = evil
-    self.count = count
-    self.hp = hp
-    self.atkDmg = atkDmg
+    self.count = int(count)
+    self.hp = int(hp)
+    self.atkDmg = int(atkDmg)
     self.atkTyp = atkTyp
-    self.init = init
+    self.init = int(init)
     self.immune = immune
     self.weak = weak
     self._target = None
@@ -67,15 +67,6 @@ class Group:
       ] if s) + ")"
     )
 
-IMMUNE_SYS = [
-  Group(False, 17, 5390, 4507, "fire", 2, weak=["radiation", "bludgeoning"]),
-  Group(False, 989, 1274, 25, "slashing", 3, ["fire"], ["bludgeoning", "slashing"]),
-]
-INFECTION = [
-  Group(True, 801, 4706, 116, "bludgeoning", 1, weak=["radiation"]),
-  Group(True, 4485, 2961, 12, "slashing", 4, ["radiation"], ["fire", "cold"]),
-]
-
 def parseInput(lines):
   import re
   lists = ([], [])
@@ -119,6 +110,7 @@ def printGroups():
     print("No groups remain")
   for g in INFECTION:
     print(" ", g.id, "contains", g.count, "units")
+  print()
 
 def target_select():
   groups = sorted(INFECTION + IMMUNE_SYS, reverse=True)#, key = lambda g: g.power)
@@ -154,13 +146,27 @@ def filterGroups():
   return good, evil
 
 if __name__ == "__main__":
-  with open("input.txt") as f:
-    IMMUNE_SYS, INFECTION = parseInput(f)
-  while len(IMMUNE_SYS) > 0 and len(INFECTION) > 1:
+  if False: # Sample
+    IMMUNE_SYS = [
+      Group(False, 17, 5390, 4507, "fire", 2, weak=["radiation", "bludgeoning"]),
+      Group(False, 989, 1274, 25, "slashing", 3, ["fire"], ["bludgeoning", "slashing"]),
+    ]
+    INFECTION = [
+      Group(True, 801, 4706, 116, "bludgeoning", 1, weak=["radiation"]),
+      Group(True, 4485, 2961, 12, "slashing", 4, ["radiation"], ["fire", "cold"]),
+    ]
+  else:
+    with open("input.txt") as f:
+      IMMUNE_SYS, INFECTION = parseInput(f)
+  loop = 0
+  while len(IMMUNE_SYS) > 0 and len(INFECTION) > 0:
     printGroups()
-    break#XXX
+    print("Iteration", loop)
+    loop += 1
     target_select()
+    print()
     attack_targets()
+    print()
     IMMUNE_SYS, INFECTION = filterGroups()
   printGroups()
   print("Remaining:", max(sum(g.count for g in IMMUNE_SYS), sum(g.count for g in INFECTION)))
