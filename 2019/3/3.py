@@ -1,3 +1,5 @@
+#import timeit
+#print(timeit.timeit('''
 class Intersection:
   def __init__(self, pos, len1, len2):
     self.pos = pos
@@ -110,3 +112,4 @@ if __name__ == "__main__":
   with open("input.txt") as f:
     wire1,wire2 = parseInput(f)
   print(min([i.length for i in do_intersect(wire1, wire2)]))
+#''', number=100)/100)
