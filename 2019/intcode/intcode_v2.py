@@ -31,7 +31,12 @@ class IntCodeOperator:
       ai = machine.currentIndex + 1
       args = [getPMode(fullCode, n)(machine, machine.getRaw(ai + n)) for n in range(self.numParams)]
       kwargs = {k:v for k,v in dict(machine=machine, i = ai - 1, store = machine.store, jumpTo = setIndex).items() if k in self._sig.parameters}
-      #print("Args for op", self.code, "@ index", ai - 1, "->", args, kwargs)
+      if machine.debug:
+        print(
+          "Args for", str(self), "@ index", ai - 1, "code =", fullCode, "->",
+          list(zip((fullCode // 10**(n + 2) % 10 for n in range(self.numParams)), args)),
+          kwargs
+        )
       res = opFunc(*args, **kwargs)
       if res != None:
         machine.store(machine.getRaw(nextIndex), res)
@@ -63,7 +68,8 @@ def inputOp(machine):
   return machine.input
 @IntCodeOperator(4)
 def outputOp(a, machine):
-  #print("Output:", a)
+  if machine.debug:
+    print("Output:", a)
   machine.setOutput(a)
 @IntCodeOperator(5)
 def trueJumpOp(a, b, jumpTo):
@@ -106,6 +112,7 @@ def setRelIndexOp(a, machine):
 
 class IntCodeMachine:
   def __init__(self, initialState, debug=False):
+    self.debug = debug
     if debug:
       print("Initialising IntCode machine with operators:\n", sorted(str(op).replace("Op", "", 1) for op in IntCodeOperator.operators.values()))
     self._initialState = initialState
