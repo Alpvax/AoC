@@ -1,9 +1,9 @@
 import inspect, collections
 
 parameterModes = {
-  0: lambda m, i: m.data[m.data[i]],
-  1: lambda m, i: m.data[i],
-  2: lambda m, i: m.data[m.relativeIndex + i],
+  0: lambda machine, val: machine.getRaw(val),
+  1: lambda machine, val: val,
+  2: lambda machine, val: machine.getRaw(machine.relativeIndex + val),
 }
 def getPMode(code, pnum):
   return parameterModes.get(code // 10**(pnum + 2) % 10, parameterModes[0])
@@ -29,12 +29,12 @@ class IntCodeOperator:
         nonlocal nextIndex
         nextIndex = i
       ai = machine.currentIndex + 1
-      args = [getPMode(fullCode, n)(machine, ai + n) for n in range(self.numParams)]
+      args = [getPMode(fullCode, n)(machine, machine.getRaw(ai + n)) for n in range(self.numParams)]
       kwargs = {k:v for k,v in dict(machine=machine, i = ai - 1, store = machine.store, jumpTo = setIndex).items() if k in self._sig.parameters}
       #print("Args for op", self.code, "@ index", ai - 1, "->", args, kwargs)
       res = opFunc(*args, **kwargs)
       if res != None:
-        machine.store(machine.get(nextIndex), res)
+        machine.store(machine.getRaw(nextIndex), res)
         nextIndex += 1
       machine.currentIndex = nextIndex
       return res
@@ -105,16 +105,17 @@ def setRelIndexOp(a, machine):
 #    next()
 
 class IntCodeMachine:
-  def __init__(self, initialState):
-    #print("Initialising IntCode machine with operators:\n", sorted(str(op).replace("Op", "", 1) for op in IntCodeOperator.operators.values()))
+  def __init__(self, initialState, debug=False):
+    if debug:
+      print("Initialising IntCode machine with operators:\n", sorted(str(op).replace("Op", "", 1) for op in IntCodeOperator.operators.values()))
     self._initialState = initialState
     self._in = collections.deque()
     self._out = collections.deque()
     self.relativeIndex = 0
     self.currentIndex = 0
-    self.data = initialState.copy()
-  def get(self, index):
-    return self.data[index]
+    self.data = {i: n for i,n in enumerate(initialState)}
+  def getRaw(self, index):
+    return self.data.get(index, 0)
   def store(self, pos, value):
     self.data[pos] = value
   @property
@@ -144,9 +145,9 @@ class IntCodeMachine:
       self.setInputs(*inputs)
     self.__running = True
     while self.__running and self.currentIndex < len(self.data):
-      code = self.get(self.currentIndex)
+      code = self.getRaw(self.currentIndex)
       op = IntCodeOperator.parse(code)
-      res = op(self, code)
+      op(self, code)
       #print(self.currentIndex, op.icodeOp, inspect.signature(op).parameters)
       #print("Result:", res)
   def stop(self):
