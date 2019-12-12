@@ -136,7 +136,7 @@ class IntCodeMachine:
     self.clearIO()
     self.currentIndex = 0
     self.relativeIndex = 0
-    self.data = self._initialState.copy()
+    self.data = {i: n for i,n in enumerate(self._initialState)}
     self.stop()
   def start(self, *inputs):
     if inputs:

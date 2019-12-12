@@ -7,6 +7,9 @@ import os
 with open(os.path.dirname(__file__) + "/input.txt") as f:
   inputData = [int(n) for n in f.read().split(",")]
 
-machine = intcode.IntCodeMachine(inputData, True)
+machine = intcode.IntCodeMachine(inputData, False)
 machine.start(1)
-print(machine._out)
+print(machine.output)
+machine.reset()
+machine.start(2)
+print(machine.output)
