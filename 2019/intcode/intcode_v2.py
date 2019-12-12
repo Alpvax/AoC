@@ -1,10 +1,22 @@
 import inspect, collections
 
-parameterModes = {
-  0: lambda machine, val: machine.getRaw(val),
-  1: lambda machine, val: val,
-  2: lambda machine, val: machine.getRaw(machine.relativeIndex + val),
-}
+def parameterMode(code):
+  def wrap(func):
+    parameterModes[code] = func
+    return func
+  return wrap
+
+parameterModes = {}
+@parameterMode(0)
+def positionMode(machine, index):
+  return machine.getRaw(index)
+@parameterMode(1)
+def immediateMode(machine, index):
+  return index
+@parameterMode(2)
+def relativeMode(machine, index):
+  return machine.getRaw(index) + machine.relativeIndex
+
 def getPMode(code, pnum):
   return parameterModes.get(code // 10**(pnum + 2) % 10, parameterModes[0])
 
@@ -29,7 +41,7 @@ class IntCodeOperator:
         nonlocal nextIndex
         nextIndex = i
       ai = machine.currentIndex + 1
-      args = [getPMode(fullCode, n)(machine, machine.getRaw(ai + n)) for n in range(self.numParams)]
+      args = [machine.getRaw(getPMode(fullCode, n)(machine, ai + n)) for n in range(self.numParams)]
       kwargs = {k:v for k,v in dict(machine=machine, i = ai - 1, store = machine.store, jumpTo = setIndex).items() if k in self._sig.parameters}
       if machine.debug:
         print(
@@ -39,7 +51,7 @@ class IntCodeOperator:
         )
       res = opFunc(*args, **kwargs)
       if res != None:
-        machine.store(machine.getRaw(nextIndex), res)
+        machine.store(getPMode(fullCode, self.numParams)(machine, nextIndex), res)
         nextIndex += 1
       machine.currentIndex = nextIndex
       return res
@@ -88,27 +100,6 @@ def equalsOp(a, b):
 @IntCodeOperator(9)
 def setRelIndexOp(a, machine):
   machine.relativeIndex += a
-
-#class IntCodeOperator:
-#  operators = {
-#    99: IntCodeOperator(99, lambda: "STOP", storeResult=False),
-#    1
-#  }
-#  @staticmethod
-#  def parse(code):
-#    op = IntCodeOperator.operators.get(code % 100)
-#    if not op:
-#      raise Exception("Invalid operator with code " + str(code % 100))
-#    return op
-#  def __init__(self, code, function, storeResult = True):
-#    self.code = code
-#    params = inspect.signature(function).parameters
-#    self._numParams = len(p for p in params if p.name not in ["m", "i"])
-#    self.store = storeResult
-#    self._function = function
-#    IntCodeOperator.operators[code] = self
-#  def operate(self, machine):
-#    next()
 
 class IntCodeMachine:
   def __init__(self, initialState, debug=False):
