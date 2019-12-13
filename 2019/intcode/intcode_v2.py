@@ -43,7 +43,7 @@ class IntCodeOperator:
       ai = machine.currentIndex + 1
       args = [machine.getRaw(getPMode(fullCode, n)(machine, ai + n)) for n in range(self.numParams)]
       kwargs = {k:v for k,v in dict(machine=machine, i = ai - 1, store = machine.store, jumpTo = setIndex).items() if k in self._sig.parameters}
-      if machine.debug:
+      if machine.debug & 2: # debug bitwise flags
         print(
           "Args for", str(self), "@ index", ai - 1, "code =", fullCode, "->",
           list(zip((fullCode // 10**(n + 2) % 10 for n in range(self.numParams)), args)),
@@ -66,7 +66,7 @@ class IntCodeOperator:
 
 @IntCodeOperator(99)
 def end_program(machine):
-  machine.stop()
+  machine.stop(True)
   #print("Ended")
 
 @IntCodeOperator(1)
@@ -80,7 +80,7 @@ def inputOp(machine):
   return machine.input
 @IntCodeOperator(4)
 def outputOp(a, machine):
-  if machine.debug:
+  if machine.debug & 1:
     print("Output:", a)
   machine.setOutput(a)
 @IntCodeOperator(5)
@@ -102,20 +102,22 @@ def setRelIndexOp(a, machine):
   machine.relativeIndex += a
 
 class IntCodeMachine:
-  def __init__(self, initialState, debug=False):
+  def __init__(self, initialState, debug = 0, name = "IntCodeMachine"):
+    self.name = name
     self.debug = debug
-    if debug:
+    if debug & 1:
       print("Initialising IntCode machine with operators:\n", sorted(str(op).replace("Op", "", 1) for op in IntCodeOperator.operators.values()))
     self._initialState = initialState
     self._in = collections.deque()
     self._out = collections.deque()
-    self.relativeIndex = 0
-    self.currentIndex = 0
-    self.data = {i: n for i,n in enumerate(initialState)}
+    self.reset()
   def getRaw(self, index):
     return self.data.get(index, 0)
   def store(self, pos, value):
     self.data[pos] = value
+  @property
+  def completed(self):
+    return self.__completed
   @property
   def input(self):
     if len(self._in) > 0:
@@ -127,6 +129,8 @@ class IntCodeMachine:
   @property
   def output(self):
     return self._out.popleft()
+  def hasOutput(self):
+    return len(self._out) > 0
   def setOutput(self, val):
     self._out.append(val)
   def clearIO(self):
@@ -134,22 +138,31 @@ class IntCodeMachine:
     self._out.clear()
   def reset(self):
     self.clearIO()
+    self.__completed = False
     self.currentIndex = 0
     self.relativeIndex = 0
     self.data = {i: n for i,n in enumerate(self._initialState)}
+    d = self.debug
+    self.debug = 0
     self.stop()
+    self.debug = d
   def start(self, *inputs):
+    if self.debug & 1:
+      print("Starting machine:", self.name)
     if inputs:
       self.setInputs(*inputs)
     self.__running = True
-    while self.__running and self.currentIndex < len(self.data):
+    while self.__running and self.currentIndex <= max(self.data.keys()) and not self.completed:
       code = self.getRaw(self.currentIndex)
       op = IntCodeOperator.parse(code)
       op(self, code)
       #print(self.currentIndex, op.icodeOp, inspect.signature(op).parameters)
       #print("Result:", res)
-  def stop(self):
+  def stop(self, completed = False):
+    if self.debug & 1:
+      print("Stopping machine: {} ({}completed)".format(self.name, "" if completed else "not "))
     self.__running = False
+    self.__completed = completed
   def __iter__(self):
     return self
   def __next__(self):
