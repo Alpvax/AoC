@@ -78,4 +78,11 @@ else:
     deck = buildDeck(10007)
     with open(os.path.dirname(__file__) + "/input.txt") as f:
         for line in file:
-            m = re.search(r"(stack)|")
+            m = re.search(r"(stack)|cut (-?\d+)|increment (-?\d+)")
+            if m.group(1):
+                deck = deal(deck)
+            elif m.group(2):
+                deck = cut(deck, int(m.group(2)))
+            elif m.group(3):
+                deck = inc(deck, int(m.group(3)))
+    print(deck)
